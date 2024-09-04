@@ -35,13 +35,15 @@ public class App extends PApplet {
     public static Random random = new Random();
 
     private Cell[][] cells;
+    static Coord[] bombLocs;
+    private Cell lastHovered;
+
     static PImage cellUnpopped;
     static PImage cellPopped;
     static PImage cellHover;
+    static PImage flagImg;
     static PImage bombImg;
     static PImage[] bombExplosionFrames;
-    static Coord[] bombLocs;
-    private Cell lastHovered;
 
 	public static int[][] mineCountColour = new int[][] {
             {0,0,0}, // 0 is not shown
@@ -130,18 +132,17 @@ public class App extends PApplet {
 	@Override
     public void setup() {
         frameRate(FPS);
-		//See PApplet javadoc:
-		//loadJSONObject(configPath)
-		//loadImage(this.getClass().getResource(filename).getPath().toLowerCase(Locale.ROOT).replace("%20", " "));
 
-        //create attributes for data storage, eg board
         cellPopped = this.loadImage("src/main/resources/minesweeper/tile.png");
         cellUnpopped = this.loadImage("src/main/resources/minesweeper/tile1.png");
         cellHover = this.loadImage("src/main/resources/minesweeper/tile2.png");
 
+        flagImg = this.loadImage("src/main/resources/minesweeper/flag.png");
+
         bombExplosionFrames = loadBombAnimationImages();
         bombImg = bombExplosionFrames[0];
         bombLocs = getRandomBombLocations(100);
+
         this.cells = getCellsInit();
     }
 
@@ -173,12 +174,26 @@ public class App extends PApplet {
     @Override
     public void mousePressed(MouseEvent e) {
         Coord coord = mousePosToCellCoords(mouseX, mouseY);
-
         Cell clicked = getCellAt(coord.row, coord.col);
         if (clicked == null) {
             return;
         }
 
+        if (mouseButton == LEFT) {
+            handleLeftMB(clicked);
+            return;
+        }
+
+        if (mouseButton == RIGHT) {
+            handleRightMB(clicked);
+        }
+    }
+
+    void handleRightMB(Cell clicked) {
+        clicked.addFlag();
+    }
+
+    void handleLeftMB(Cell clicked) {
         if (clicked.hasBomb()) {
             clicked.explode(0);
             explodeAll(clicked);

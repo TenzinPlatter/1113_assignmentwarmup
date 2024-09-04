@@ -17,11 +17,22 @@ public class Cell {
     private PImage sprite;
     private int delay;
     private boolean updated = true;
+    private boolean hasFlag = false;
 
     public Cell(int x, int y) {
         this.x = x;
         this.y = y;
         this.sprite = App.cellUnpopped;
+    }
+
+    public void addFlag() {
+        this.updated = true;
+        this.hasFlag = true;
+    }
+
+    public void removeFlag() {
+        this.updated = true;
+        this.hasFlag = false;
     }
 
     public void setSprite(PImage sprite) {
@@ -93,8 +104,12 @@ public class Cell {
     }
 
     public void draw(PApplet app) {
-        app.image(this.sprite, this.x, this.y, this.HEIGHT, this.HEIGHT);
+        app.image(this.sprite, this.x, this.y, this.WIDTH, this.HEIGHT);
         this.updated = false;
+        if (this.hasFlag) {
+            app.image(App.flagImg, this.x, this.y, this.WIDTH, this.HEIGHT);
+            System.out.println("Added flag");
+        }
     }
 
 }
