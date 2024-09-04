@@ -28,7 +28,7 @@ public class App extends PApplet {
     public static final int BOARD_WIDTH = WIDTH/CELLSIZE;
     public static final int BOARD_HEIGHT = 20;
 
-    public static final int FPS = 30;
+    public static final int FPS = 60;
 
     public String configPath;
 
@@ -40,7 +40,8 @@ public class App extends PApplet {
     static PImage cellHover;
     static PImage bombImg;
     static PImage[] bombExplosionFrames;
-
+    static Coord[] bombLocs;
+    private Cell lastHovered;
 
 	public static int[][] mineCountColour = new int[][] {
             {0,0,0}, // 0 is not shown
@@ -68,22 +69,19 @@ public class App extends PApplet {
         size(WIDTH, HEIGHT);
     }
 
-    public Cell[][] getCellsInit(int bombNo) {
+    public Cell[][] getCellsInit() {
         Cell[][] cells = new Cell[18][27];
         // bombLocs has been sorted by row then col so all bombs will be shown
-        Coord[] bombLocs = getRandomBombLocations(bombNo);
         int i = 0;
         for (int row = 0; row < 18; row++) {
             for (int col = 0; col < 27; col++) {
                 cells[row][col] = new Cell(col * CELLSIZE, TOPBAR + row * CELLHEIGHT);
                 if (
-                        i < bombNo
+                        i < bombLocs.length
                         && row == bombLocs[i].getRow()
                         && col == bombLocs[i].getCol()
                 ) {
                     cells[row][col].giveBomb();
-                    System.out.println(row);
-                    System.out.println(col);
                     i++;
                 }
             }
@@ -143,7 +141,8 @@ public class App extends PApplet {
 
         bombExplosionFrames = loadBombAnimationImages();
         bombImg = bombExplosionFrames[0];
-        this.cells = getCellsInit(100);
+        bombLocs = getRandomBombLocations(100);
+        this.cells = getCellsInit();
     }
 
     PImage[] loadBombAnimationImages() {
@@ -175,15 +174,14 @@ public class App extends PApplet {
     public void mousePressed(MouseEvent e) {
         Coord coord = mousePosToCellCoords(mouseX, mouseY);
 
-        // clicked in topbar
-        if (coord.col < 0) {
+        Cell clicked = getCellAt(coord.row, coord.col);
+        if (clicked == null) {
             return;
         }
 
-        Cell clicked = getCellAt(coord.row, coord.col);
-
         if (clicked.hasBomb()) {
-            clicked.explode();
+            clicked.explode(0);
+            explodeAll(clicked);
             return;
         }
 
@@ -196,14 +194,36 @@ public class App extends PApplet {
     }
 
     private Cell getCellAt(int row, int col) {
-        return this.cells[col][row];
+        if (row < 0 || row > 17 || col < 0 || col > 27) {
+            return null;
+        }
+        return this.cells[row][col];
+    }
+
+    private Cell getCellAt(Coord coord) {
+        if (coord.row < 0 || coord.row > 17 || coord.col < 0 || coord.col > 27) {
+            return null;
+        }
+        return this.cells[coord.row][coord.col];
+    }
+
+    void explodeAll(Cell clicked) {
+        int counter = 1;
+        for (Coord loc : bombLocs) {
+            Cell bomb = getCellAt(loc);
+            if (bomb == null || bomb == clicked) {
+                continue;
+            }
+            bomb.explode(counter * 3);
+            counter++;
+        }
     }
 
     private Coord mousePosToCellCoords(int x, int y) {
         int col = Math.floorDiv(x, CELLSIZE);
         int row = Math.floorDiv(y - TOPBAR, CELLHEIGHT);
 
-        return new Coord(col, row);
+        return new Coord(row, col);
     }
 
     @Override
@@ -217,24 +237,46 @@ public class App extends PApplet {
 	@Override
     public void draw() {
         tickBombs();
+        showHoverSquare();
         drawCells();
     }
 
+    void showHoverSquare() {
+        Coord coord = mousePosToCellCoords(mouseX, mouseY);
+        Cell hovered = getCellAt(coord);
+
+        if (hovered == null) {
+            return;
+        }
+
+        if (this.lastHovered != null) {
+            this.lastHovered.unhover();
+        }
+        hovered.hover();
+        this.lastHovered = hovered;
+    }
+
     void tickBombs() {
-        for (int row = 0; row < 27; row++) {
-            for (int col = 0; col < 18; col++) {
-                if (getCellAt(row, col).isExploding()) {
-                    System.out.println("Ticking");
-                    getCellAt(row, col).updateAnimation();
+        for (int row = 0; row < 18; row++) {
+            for (int col = 0; col < 27; col++) {
+                Cell cell = getCellAt(row, col);
+                if (cell == null) {
+                    continue;
+                }
+                if (cell.isExploding()) {
+                    cell.updateAnimation();
                 }
             }
         }
     }
 
     void drawCells() {
-        for (int x = 0; x < 18; x++) {
-            for (int y = 0; y < 27; y++) {
-                this.cells[x][y].draw(this);
+        for (int row = 0; row < 18; row++) {
+            for (int col = 0; col < 27; col++) {
+                Cell cell = this.cells[row][col];
+                if (cell.wasUpdated()) {
+                    cell.draw(this);
+                }
             }
         }
     }
@@ -250,7 +292,9 @@ class Coord {
     int row;
     int col;
 
-    public Coord(int row, int col) {
+    public Coord(int row, int col){
+        if (row > 17 || col > 26) {
+        }
         this.row = row;
         this.col = col;
     }
