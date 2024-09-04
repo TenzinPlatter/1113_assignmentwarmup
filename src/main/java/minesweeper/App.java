@@ -34,8 +34,11 @@ public class App extends PApplet {
 
     public static Random random = new Random();
 
-    private Cell[][] cells;
     static Coord[] bombLocs;
+
+    static int bombNo;
+
+    private Cell[][] cells;
     private Cell lastHovered;
 
     static PImage cellUnpopped;
@@ -141,7 +144,8 @@ public class App extends PApplet {
 
         bombExplosionFrames = loadBombAnimationImages();
         bombImg = bombExplosionFrames[0];
-        bombLocs = getRandomBombLocations(100);
+
+        bombLocs = getRandomBombLocations(bombNo);
 
         this.cells = getCellsInit();
     }
@@ -298,6 +302,17 @@ public class App extends PApplet {
 
 
     public static void main(String[] args) {
+        try {
+            bombNo = Integer.parseInt(args[0]);
+        } catch (Exception e) {
+            bombNo = 100;
+        }
+
+        // no. of squares in grid
+        if (bombNo > 486) {
+            bombNo = 100;
+        }
+
         PApplet.main("minesweeper.App");
     }
 
@@ -308,8 +323,6 @@ class Coord {
     int col;
 
     public Coord(int row, int col){
-        if (row > 17 || col > 26) {
-        }
         this.row = row;
         this.col = col;
     }
