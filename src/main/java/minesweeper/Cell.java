@@ -12,7 +12,6 @@ public class Cell {
     boolean isPopped = false;
     boolean hasBomb = false;
     private int animationFrame = 0;
-    private double secondsBetweenUpdate = 0.0833; // 12 fps
     private int framesSinceLastUpdate = 0;
     private PImage sprite;
     private int delay;
@@ -25,9 +24,13 @@ public class Cell {
         this.sprite = App.cellUnpopped;
     }
 
-    public void addFlag() {
+    public void toggleFlag() {
         this.updated = true;
-        this.hasFlag = true;
+        this.hasFlag = !this.hasFlag;
+    }
+
+    boolean hasFlag() {
+        return this.hasFlag;
     }
 
     public void removeFlag() {
@@ -37,6 +40,7 @@ public class Cell {
 
     public void setSprite(PImage sprite) {
         this.sprite = sprite;
+        this.updated = true;
     }
 
     public boolean isPopped() {
@@ -95,7 +99,8 @@ public class Cell {
         }
 
         framesSinceLastUpdate++;
-        if (framesSinceLastUpdate >= secondsBetweenUpdate * App.FPS) {
+        int framesBetweenUpdate = 3;
+        if (framesSinceLastUpdate >= framesBetweenUpdate) {
             this.updated = true;
             this.animationFrame++;
             this.setSprite(App.bombExplosionFrames[this.animationFrame]);
@@ -108,7 +113,6 @@ public class Cell {
         this.updated = false;
         if (this.hasFlag) {
             app.image(App.flagImg, this.x, this.y, this.WIDTH, this.HEIGHT);
-            System.out.println("Added flag");
         }
     }
 

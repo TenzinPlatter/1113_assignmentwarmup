@@ -16,6 +16,8 @@ import java.io.*;
 import java.util.*;
 import java.util.List;
 
+import static java.lang.Math.floorDiv;
+
 public class App extends PApplet {
 
     public static final int CELLSIZE = 32; //8;
@@ -28,7 +30,9 @@ public class App extends PApplet {
     public static final int BOARD_WIDTH = WIDTH/CELLSIZE;
     public static final int BOARD_HEIGHT = 20;
 
-    public static final int FPS = 60;
+    public static final int FPS = 30;
+    private static int secondsSinceStart = 0;
+    private static int frameCounter = 0;
 
     public String configPath;
 
@@ -135,6 +139,7 @@ public class App extends PApplet {
 	@Override
     public void setup() {
         frameRate(FPS);
+        textSize(50);
 
         cellPopped = this.loadImage("src/main/resources/minesweeper/tile.png");
         cellUnpopped = this.loadImage("src/main/resources/minesweeper/tile1.png");
@@ -194,10 +199,16 @@ public class App extends PApplet {
     }
 
     void handleRightMB(Cell clicked) {
-        clicked.addFlag();
+        if (!clicked.isPopped()) {
+            clicked.toggleFlag();
+        }
     }
 
     void handleLeftMB(Cell clicked) {
+        if (clicked.hasFlag()) {
+            return;
+        }
+
         if (clicked.hasBomb()) {
             clicked.explode(0);
             explodeAll(clicked);
@@ -239,8 +250,8 @@ public class App extends PApplet {
     }
 
     private Coord mousePosToCellCoords(int x, int y) {
-        int col = Math.floorDiv(x, CELLSIZE);
-        int row = Math.floorDiv(y - TOPBAR, CELLHEIGHT);
+        int col = floorDiv(x, CELLSIZE);
+        int row = floorDiv(y - TOPBAR, CELLHEIGHT);
 
         return new Coord(row, col);
     }
@@ -255,9 +266,28 @@ public class App extends PApplet {
      */
 	@Override
     public void draw() {
+        fillTop();
         tickBombs();
         showHoverSquare();
         drawCells();
+        drawTimer();
+    }
+
+    void fillTop() {
+        fill(100);
+        rect(0, 0, WIDTH, TOPBAR);
+    }
+
+    void drawTimer() {
+        frameCounter++;
+
+        if (Math.floorDiv(frameCounter, FPS) == 0 && secondsSinceStart != 0) {
+            return;
+        }
+
+        frameCounter = 0;
+        secondsSinceStart++;
+        this.text(secondsSinceStart, WIDTH - 300, 50);
     }
 
     void showHoverSquare() {
@@ -265,6 +295,10 @@ public class App extends PApplet {
         Cell hovered = getCellAt(coord);
 
         if (hovered == null) {
+            return;
+        }
+
+        if (hovered.isPopped() || hovered.isExploding()) {
             return;
         }
 
