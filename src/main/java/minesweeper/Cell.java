@@ -17,11 +17,20 @@ public class Cell {
     private int delay;
     private boolean updated = true;
     private boolean hasFlag = false;
+    int neighboringBombs = 0;
 
     public Cell(int x, int y) {
         this.x = x;
         this.y = y;
         this.sprite = App.cellUnpopped;
+    }
+
+    int getColumn() {
+        return Math.floorDiv(this.x, WIDTH);
+    }
+
+    int getRow() {
+        return Math.floorDiv(this.y - App.TOPBAR, HEIGHT);
     }
 
     public void toggleFlag() {

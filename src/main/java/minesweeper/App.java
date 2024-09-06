@@ -96,7 +96,23 @@ public class App extends PApplet {
             }
         }
 
+        setNeighboringBombCount(cells);
+
         return cells;
+    }
+
+    void setNeighboringBombCount(Cell[][] cells) {
+        for (int row = 0; row < 18; row++) {
+            for (int col = 0; col < 27; col++) {
+                Cell c = cells[row][col];
+                Cell[] neighbors = getNeighbors(c);
+                for (Cell neighbor : neighbors) {
+                    if (neighbor.hasBomb()) {
+                        c.neighboringBombs++;
+                    }
+                }
+            }
+        }
     }
 
     Coord[] getRandomBombLocations(int n) {
@@ -153,6 +169,8 @@ public class App extends PApplet {
         bombLocs = getRandomBombLocations(bombNo);
 
         this.cells = getCellsInit();
+
+        System.out.println("Setup done");
     }
 
     PImage[] loadBombAnimationImages() {
@@ -196,6 +214,45 @@ public class App extends PApplet {
         if (mouseButton == RIGHT) {
             handleRightMB(clicked);
         }
+    }
+
+    /**
+     *  Assumes clicked has no bomb
+     *  Returns array of cells that are connected to clicked and have no bomb
+      * @param clicked
+     * @return
+     */
+     void popAdjacentCells(Cell clicked) {
+        ArrayList<Cell> cells = new ArrayList<>();
+        Cell[] neighbors = getNeighbors(clicked);
+        for (Cell neighbor : neighbors) {
+            if (neighbor.neighboringBombs == 0) {
+                popAdjacentCells(neighbor);
+                popCell(neighbor);
+            }
+        }
+    }
+
+    boolean cellsContainBomb(Cell[] cells) {
+        for (Cell cell : cells) {
+            if (cell.hasBomb()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    Cell[] getNeighbors(Cell c) {
+        Cell[] neighbors = new Cell[9];
+        for (int col = c.getColumn() - 1; col <= c.getColumn() + 1; col++) {
+            for (int row = c.getRow() - 1; row <= c.getRow() + 1; row++) {
+                int index = (col + 1) * 3 + row;
+                neighbors[index] = getCellAt(row, col);
+            }
+        }
+
+        return neighbors;
     }
 
     void handleRightMB(Cell clicked) {
@@ -334,7 +391,6 @@ public class App extends PApplet {
         }
     }
 
-
     public static void main(String[] args) {
         try {
             bombNo = Integer.parseInt(args[0]);
@@ -349,7 +405,6 @@ public class App extends PApplet {
 
         PApplet.main("minesweeper.App");
     }
-
 }
 
 class Coord {
